@@ -22,10 +22,10 @@ then
         mkdir -p $folder/$domain/recon/crawlling/;
         mkdir -p $folder/$domain/recon/subdomains/;
 
-        if [ ! -f '/home/drogas/bounty/resolvers.txt' ]
+        if [ ! -f '/tmp/resolvers.txt' ]
         then
             echo -e $BRed "Generate list of valid resolvers" $NOCOLOR
-            dnsvalidator -tL https://public-dns.info/nameservers.txt -threads 100 -o /home/drogas/bounty/resolvers.txt
+            dnsvalidator -tL https://public-dns.info/nameservers.txt -threads 100 -o /tmp/resolvers.txt
         fi
         # Horizontal Enumeration
         # Finding IPs
@@ -134,7 +134,7 @@ then
         # DNS Bruteforcing
         echo -e $BBlue "DNS Bruteforcing" $NOCOLOR
         echo -e $BGreen "Running Puredns" $NOCOLOR
-        puredns bruteforce ~/tools/seclists/Discovery/Web-Content/jhaddix_all.txt $domain -r /home/drogas/bounty/resolvers.txt --write $folder/$domain/recon/subdomains/sub_puredns.txt --write-wildcards $folder/$domain/recon/subdomains/wildcards.txt --write-massdns $folder/$domain/recon/subdomains/massdns.txt;
+        puredns bruteforce ~/tools/seclists/Discovery/Web-Content/jhaddix_all.txt $domain -r /tmp/resolvers.txt --write $folder/$domain/recon/subdomains/sub_puredns.txt --write-wildcards $folder/$domain/recon/subdomains/wildcards.txt --write-massdns $folder/$domain/recon/subdomains/massdns.txt;
 
         # Permutation / Alterations
         echo -e $BBlue "Permutation / Alterations" $NOCOLOR
@@ -144,7 +144,7 @@ then
         do
             gotator -sub $x -perm ~/tools/seclists/Discovery/Web-Content/permutations.txt -depth 1 -numbers 10 -mindup -adv -md > $folder/$domain/recon/subdomains/sub_gotator_$x.txt;
             echo -e $BGreen "Running Puredns" $NOCOLOR
-            puredns resolve $folder/$domain/recon/subdomains/sub_gotator_$x.txt -r /home/drogas/bounty/resolvers.txt --write $folder/$domain/recon/subdomains/permutations_$x.txt;
+            puredns resolve $folder/$domain/recon/subdomains/sub_gotator_$x.txt -r /tmp/resolvers.txt --write $folder/$domain/recon/subdomains/permutations_$x.txt;
             cat $folder/$domain/recon/subdomains/permutations_$x.txt | grep $domain >> $folder/$domain/recon/subdomains/permutations.txt;
             rm $folder/$domain/recon/subdomains/permutations_$x.txt $folder/$domain/recon/subdomains/sub_gotator_$x.txt ;
         done
@@ -182,13 +182,13 @@ then
         cat $folder/$domain/recon/subdomains/gospider.txt | grep -Eo 'https?://[^ ]+' | sed 's/]$//' | unfurl -u domains | grep ".$domain$" | sort -u > $folder/$domain/recon/subdomains/scrap_subs.txt;
 
         echo -e $BGreen "Running Puredns" $NOCOLOR
-        puredns resolve $folder/$domain/recon/subdomains/scrap_subs.txt -w $folder/$domain/recon/subdomains/sub_scrap.txt -r /home/drogas/bounty/resolvers.txt;
+        puredns resolve $folder/$domain/recon/subdomains/scrap_subs.txt -w $folder/$domain/recon/subdomains/sub_scrap.txt -r /tmp/resolvers.txt;
         rm $folder/$domain/recon/subdomains/probed_tmp_scrap.txt $folder/$domain/recon/subdomains/scrap_subs.txt $folder/$domain/recon/subdomains/gospider.txt;
 
         # Resolving all subdomains
         echo -e $BBlue "Resolving all subdomains" $NOCOLOR
         echo -e $BGreen "Running Massdns" $NOCOLOR
-        cat $folder/$domain/recon/subdomains/sub*.txt | massdns -r /home/drogas/bounty/resolvers.txt -t A -o S -w $folder/$domain/recon/subdomains/sub_resolved.txt --root;
+        cat $folder/$domain/recon/subdomains/sub*.txt | massdns -r /tmp/resolvers.txt -t A -o S -w $folder/$domain/recon/subdomains/sub_resolved.txt --root;
         sed 's/A.*//' $folder/$domain/recon/subdomains/sub_resolved.txt | sed 's/CN.*//' | sed 's/\..$//' | cut -d / -f 3 | cut -d " " -f 1 | sort -u > $folder/$domain/recon/subdomains/subdomains.txt;
 
         # Web Probing
